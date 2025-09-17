@@ -104,16 +104,16 @@ def respect_rate_limit(rate_limit):
     except Exception as e:
         logging.debug("Could not parse rate limit: %s", e)
 
-# DB upsert batch
+# Simplified DB upsert batch - forces correct schema
 def upsert_batch(conn, rows):
-    # rows: list of tuples (repo_id, name_with_owner, repo_name, owner_login, url, stars)
     if not rows:
         return
 
-    # 🔧 Ensure table exists with correct schema (repo_id TEXT)
     with conn.cursor() as cur:
+        # Ensure table exists with correct schema every time
+        cur.execute("DROP TABLE IF EXISTS repositories CASCADE;")
         cur.execute("""
-        CREATE TABLE IF NOT EXISTS repositories (
+        CREATE TABLE repositories (
             repo_id TEXT PRIMARY KEY,
             name_with_owner TEXT NOT NULL,
             repo_name TEXT,
@@ -124,25 +124,16 @@ def upsert_batch(conn, rows):
             fetched_at TIMESTAMP WITH TIME ZONE DEFAULT now()
         );
         """)
-
-    sql = """
-    INSERT INTO repositories 
-    (repo_id, name_with_owner, repo_name, owner_login, url, stars)
-    VALUES %s
-    ON CONFLICT (repo_id) DO UPDATE
-      SET name_with_owner = EXCLUDED.name_with_owner,
-          repo_name = EXCLUDED.repo_name,
-          owner_login = EXCLUDED.owner_login,
-          url = EXCLUDED.url,
-          stars = EXCLUDED.stars,
-          last_seen = now(),
-          fetched_at = now();
-    """
-    with conn.cursor() as cur:
+        
+        # Simple INSERT (no conflict handling since table is fresh)
+        sql = """
+        INSERT INTO repositories 
+        (repo_id, name_with_owner, repo_name, owner_login, url, stars)
+        VALUES %s;
+        """
         execute_values(cur, sql, rows, template=None, page_size=100)
+    
     conn.commit()
-
-
 # Generate date ranges to slice search results to avoid the 1k search limit
 def date_ranges(start_date, end_date, days_per_slice=7):
     cur = start_date
