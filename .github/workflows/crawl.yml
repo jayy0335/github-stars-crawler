@@ -58,6 +58,10 @@ jobs:
       - name: Create schema
         run: |
           psql postgresql://postgres:postgres@localhost:5432/postgres -f sql/setup_schema.sql
+      - name: Check schema
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c "\d repositories"
+
 
       - name: Run crawler
         env:
