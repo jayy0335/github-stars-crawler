@@ -110,17 +110,18 @@ def upsert_batch(conn, rows):
     if not rows:
         return
     sql = """
-    INSERT INTO repositories (repo_id, name_with_owner, repo_name, owner_login, url, stars, fetched_at, last_seen)
+    INSERT INTO repositories 
+    (repo_id, name_with_owner, repo_name, owner_login, url, stars)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
       SET name_with_owner = EXCLUDED.name_with_owner,
-          repo_name = EXCLUDED.repo_name,
-          owner_login = EXCLUDED.owner_login,
-          url = EXCLUDED.url,
-          stars = EXCLUDED.stars,
-          fetched_at = EXCLUDED.fetched_at,
-          last_seen = now();
-    """
+      repo_name = EXCLUDED.repo_name,
+      owner_login = EXCLUDED.owner_login,
+      url = EXCLUDED.url,
+      stars = EXCLUDED.stars,
+      last_seen = now(),
+      fetched_at = now();
+"""
     with conn.cursor() as cur:
         execute_values(cur, sql, rows, template=None, page_size=100)
     conn.commit()
