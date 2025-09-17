@@ -171,7 +171,7 @@ def fetch_repos_target(target_count=TARGET_COUNT):
                     repo_id = int(node["id"].split(":")[-1]) if ":" in node["id"] else node["id"]
                 except Exception:
                     # fallback: assign synthetic id (shouldn't happen on Repository nodes)
-                    repo_id = None
+                    repo_id = node["id"]
                 name_with_owner = node.get("nameWithOwner")
                 repo_name = node.get("name")
                 owner_login = node.get("owner", {}).get("login")
