@@ -1,6 +1,6 @@
 -- Create repositories table
 CREATE TABLE IF NOT EXISTS repositories (
-    repo_id BIGINT PRIMARY KEY,
+    repo_id TEXT PRIMARY KEY,              -- changed from BIGINT
     name_with_owner TEXT NOT NULL,
     repo_name TEXT,
     owner_login TEXT,
