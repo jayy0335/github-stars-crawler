@@ -167,11 +167,7 @@ def fetch_repos_target(target_count=TARGET_COUNT):
                 node = e.get("node")
                 if not node:
                     continue
-                try:
-                    repo_id = int(node["id"].split(":")[-1]) if ":" in node["id"] else node["id"]
-                except Exception:
-                    # fallback: assign synthetic id (shouldn't happen on Repository nodes)
-                    repo_id = node["id"]
+                repo_id = node["id"]  # always a string, keep it as TEXT
                 name_with_owner = node.get("nameWithOwner")
                 repo_name = node.get("name")
                 owner_login = node.get("owner", {}).get("login")
