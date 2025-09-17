@@ -109,22 +109,39 @@ def upsert_batch(conn, rows):
     # rows: list of tuples (repo_id, name_with_owner, repo_name, owner_login, url, stars)
     if not rows:
         return
+
+    # 🔧 Ensure table exists with correct schema (repo_id TEXT)
+    with conn.cursor() as cur:
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS repositories (
+            repo_id TEXT PRIMARY KEY,
+            name_with_owner TEXT NOT NULL,
+            repo_name TEXT,
+            owner_login TEXT,
+            url TEXT,
+            stars INT NOT NULL,
+            last_seen TIMESTAMP WITH TIME ZONE DEFAULT now(),
+            fetched_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+        );
+        """)
+
     sql = """
     INSERT INTO repositories 
     (repo_id, name_with_owner, repo_name, owner_login, url, stars)
     VALUES %s
     ON CONFLICT (repo_id) DO UPDATE
       SET name_with_owner = EXCLUDED.name_with_owner,
-      repo_name = EXCLUDED.repo_name,
-      owner_login = EXCLUDED.owner_login,
-      url = EXCLUDED.url,
-      stars = EXCLUDED.stars,
-      last_seen = now(),
-      fetched_at = now();
-"""
+          repo_name = EXCLUDED.repo_name,
+          owner_login = EXCLUDED.owner_login,
+          url = EXCLUDED.url,
+          stars = EXCLUDED.stars,
+          last_seen = now(),
+          fetched_at = now();
+    """
     with conn.cursor() as cur:
         execute_values(cur, sql, rows, template=None, page_size=100)
     conn.commit()
+
 
 # Generate date ranges to slice search results to avoid the 1k search limit
 def date_ranges(start_date, end_date, days_per_slice=7):
