@@ -55,13 +55,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install psycopg2-binary requests
 
-      - name: Create schema
+      - name: Drop and recreate repositories table
         run: |
-          psql postgresql://postgres:postgres@localhost:5432/postgres -f sql/setup_schema.sql
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c "DROP TABLE IF EXISTS repositories;"
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c "
+            CREATE TABLE repositories (
+              repo_id TEXT PRIMARY KEY,
+              name_with_owner TEXT NOT NULL,
+              repo_name TEXT,
+              owner_login TEXT,
+              url TEXT,
+              stars INT NOT NULL,
+              last_seen TIMESTAMP WITH TIME ZONE DEFAULT now(),
+              fetched_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+            );"
 
-      - name: Force alter repo_id to TEXT
+      - name: Check schema
         run: |
-          psql postgresql://postgres:postgres@localhost:5432/postgres -c "ALTER TABLE repositories ALTER COLUMN repo_id TYPE TEXT;"
+          psql postgresql://postgres:postgres@localhost:5432/postgres -c "\d+ repositories"
 
 
 
