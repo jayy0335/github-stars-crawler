@@ -209,14 +209,34 @@ def fetch_repos_target(target_count=TARGET_COUNT):
         logging.info("Final upsert done. Total collected ~ %s", collected)
 
     # export to CSV (optional)
-    out_file = os.getenv("OUT_CSV", "/tmp/repos_stars.csv")
+   # CSV export using PostgreSQL's copy_to method:
+
+# export to CSV (optional)
+out_file = os.getenv("OUT_CSV", "/tmp/repos_stars.csv")
+with open(out_file, "w", encoding="utf-8") as f:
     with conn.cursor() as cur:
-        cur.execute("COPY (SELECT repo_id, name_with_owner, repo_name, owner_login, url, stars, fetched_at FROM repositories) TO STDOUT WITH CSV HEADER")
-        with open(out_file, "w", encoding="utf-8") as f:
-            cur.copy_expert("COPY (SELECT repo_id, name_with_owner, repo_name, owner_login, url, stars, fetched_at FROM repositories) TO STDOUT WITH CSV HEADER", f)
-    logging.info("Exported CSV to %s", out_file)
-    conn.close()
-    return out_file
+        cur.copy_to(
+            f, 
+            'repositories', 
+            sep=',',
+            null='',
+            columns=('repo_id', 'name_with_owner', 'repo_name', 'owner_login', 'url', 'stars', 'fetched_at')
+        )
+
+# Add CSV header manually
+import tempfile
+with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as temp_file:
+    # Write header
+    temp_file.write('repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at\n')
+    # Append the data
+    with open(out_file, 'r', encoding='utf-8') as data_file:
+        temp_file.write(data_file.read())
+
+# Replace the original file
+import shutil
+shutil.move(temp_file.name, out_file)
+
+logging.info("Exported CSV to %s", out_file)
 
 if __name__ == "__main__":
     out = fetch_repos_target()
