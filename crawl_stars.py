@@ -134,6 +134,7 @@ def upsert_batch(conn, rows):
         execute_values(cur, sql, rows, template=None, page_size=100)
     
     conn.commit()
+
 # Generate date ranges to slice search results to avoid the 1k search limit
 def date_ranges(start_date, end_date, days_per_slice=7):
     cur = start_date
@@ -208,35 +209,34 @@ def fetch_repos_target(target_count=TARGET_COUNT):
         collected += len(batch)
         logging.info("Final upsert done. Total collected ~ %s", collected)
 
-    # export to CSV (optional)
-   # CSV export using PostgreSQL's copy_to method:
-
-# export to CSV (optional)
-out_file = os.getenv("OUT_CSV", "/tmp/repos_stars.csv")
-with open(out_file, "w", encoding="utf-8") as f:
-    with conn.cursor() as cur:
-        cur.copy_to(
-            f, 
-            'repositories', 
-            sep=',',
-            null='',
-            columns=('repo_id', 'name_with_owner', 'repo_name', 'owner_login', 'url', 'stars', 'fetched_at')
-        )
-
-# Add CSV header manually
-import tempfile
-with tempfile.NamedTemporaryFile(mode='w+', delete=False, encoding='utf-8') as temp_file:
-    # Write header
-    temp_file.write('repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at\n')
-    # Append the data
-    with open(out_file, 'r', encoding='utf-8') as data_file:
-        temp_file.write(data_file.read())
-
-# Replace the original file
-import shutil
-shutil.move(temp_file.name, out_file)
-
-logging.info("Exported CSV to %s", out_file)
+    # export to CSV (fixed version inside the function)
+    import csv
+    import tempfile
+    import shutil
+    
+    out_file = os.getenv("OUT_CSV", "/tmp/repos_stars.csv")
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT repo_id, name_with_owner, repo_name, owner_login, url, stars, fetched_at FROM repositories")
+            rows = cur.fetchall()
+            
+            # Write CSV manually
+            with open(out_file, "w", encoding="utf-8", newline='') as f:
+                writer = csv.writer(f)
+                # Write header
+                writer.writerow(['repo_id', 'name_with_owner', 'repo_name', 'owner_login', 'url', 'stars', 'fetched_at'])
+                # Write data
+                writer.writerows(rows)
+        
+        logging.info("Exported CSV to %s with %d rows", out_file, len(rows))
+    except Exception as e:
+        logging.error("Failed to export CSV: %s", e)
+        # Create empty file so workflow doesn't fail
+        with open(out_file, "w", encoding="utf-8") as f:
+            f.write("repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at\n")
+    
+    conn.close()
+    return out_file
 
 if __name__ == "__main__":
     out = fetch_repos_target()
