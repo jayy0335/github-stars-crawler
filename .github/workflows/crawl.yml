@@ -29,7 +29,7 @@ jobs:
       PGUSER: postgres
       PGPASSWORD: postgres
       PGDATABASE: postgres
-      # TARGET_COUNT - you can reduce for testing
+      # TARGET_COUNT - reduce for testing, increase later
       TARGET_COUNT: 1000
 
     steps:
@@ -55,7 +55,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install psycopg2-binary requests
 
-      - name: Drop and recreate repositories table
+      - name: Force recreate repositories table
         run: |
           psql postgresql://postgres:postgres@localhost:5432/postgres -c "DROP TABLE IF EXISTS repositories;"
           psql postgresql://postgres:postgres@localhost:5432/postgres -c "
@@ -72,9 +72,8 @@ jobs:
 
       - name: Check schema
         run: |
+          echo "Verifying repositories table structure:"
           psql postgresql://postgres:postgres@localhost:5432/postgres -c "\d+ repositories"
-
-
 
       - name: Run crawler
         env:
