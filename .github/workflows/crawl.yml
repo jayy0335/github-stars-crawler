@@ -1,9 +1,13 @@
 name: GitHub Stars Crawler
 
+# Trigger on pushes to your branch, manual dispatch, or daily schedule
 on:
+  push:
+    branches:
+      - github-crawler  # your branch name
+  workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # daily at midnight UTC
-  workflow_dispatch:    # allows manual trigger
+    - cron: "0 0 * * *"  # daily at midnight UTC
 
 jobs:
   crawl:
@@ -19,7 +23,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres -d postgres"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=5s
           --health-timeout=3s
           --health-retries=10
@@ -35,8 +39,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests psycopg2-binary
+          pip install --upgrade pip
+          pip install requests psycopg2
 
       - name: Prepare artifacts folder
         run: mkdir -p artifacts
@@ -44,11 +48,11 @@ jobs:
       - name: Wait for Postgres
         run: |
           echo "Waiting for Postgres to be ready..."
-          until pg_isready -h localhost -p 5432 -U postgres -d postgres; do
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
             echo "Postgres not ready yet... waiting 2s"
             sleep 2
           done
-          echo "Postgres is ready!"
 
       - name: Run Crawler
         env:
@@ -63,14 +67,12 @@ jobs:
           BATCH_SIZE: 200
           OUT_CSV: artifacts/repos_stars.csv
         run: |
+          # Ensure CSV folder and file exists
           mkdir -p artifacts
-          python main.py
-
-      - name: Ensure CSV exists
-        run: |
           if [ ! -f artifacts/repos_stars.csv ]; then
             echo "repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at" > artifacts/repos_stars.csv
           fi
+          python main.py
 
       - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
