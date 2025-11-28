@@ -12,7 +12,7 @@ class Config:
     PGPASSWORD = os.getenv("PGPASSWORD", "postgres") 
     PGDATABASE = os.getenv("PGDATABASE", "postgres")
 
-    TARGET_COUNT = int(os.getenv("TARGET_COUNT", "100"))
+    TARGET_COUNT = int(os.getenv("TARGET_COUNT", "2000"))
     DAYS_PER_SLICE = int(os.getenv("DAYS_PER_SLICE", "3"))
     PAGE_BATCH = int(os.getenv("BATCH_SIZE", "100"))
 
