@@ -2,16 +2,16 @@ name: GitHub Stars Crawler
 
 on:
   schedule:
-    - cron: "0 0 * * *"  
-  workflow_dispatch:    
+    - cron: "0 0 * * *" # daily at midnight UTC
+  workflow_dispatch:    # manual trigger
 
 jobs:
   crawl:
-    runs-on: :contentReference[oaicite:0]{index=0}
+    runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: :contentReference[oaicite:1]{index=1}
+        image: postgres:15
         env:
           POSTGRES_USER: ${{ secrets.PGUSER }}
           POSTGRES_PASSWORD: ${{ secrets.PGPASSWORD }}
@@ -26,10 +26,10 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: :contentReference[oaicite:2]{index=2}@v3
+        uses: actions/checkout@v3
 
       - name: Setup Python
-        uses: :contentReference[oaicite:3]{index=3}@v4
+        uses: actions/setup-python@v4
         with:
           python-version: "3.11"
 
@@ -46,10 +46,12 @@ jobs:
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
           PGDATABASE: ${{ secrets.PGDATABASE }}
           PGPORT: 5432
-        run: python main.py
+        run: |
+          mkdir -p artifacts
+          python main.py
 
       - name: Upload CSV Artifact
-        uses: :contentReference[oaicite:4]{index=4}@v3
+        uses: actions/upload-artifact@v3
         with:
-          name: repos_stars
+          name: github-stars-csv
           path: artifacts/repos_stars.csv
