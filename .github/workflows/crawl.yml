@@ -9,7 +9,6 @@ jobs:
   crawl:
     runs-on: ubuntu-latest
 
-    # PostgreSQL service with static credentials
     services:
       postgres:
         image: postgres:15
@@ -20,10 +19,10 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U postgres"
+          --health-cmd="pg_isready -U postgres -d postgres"
           --health-interval=5s
           --health-timeout=3s
-          --health-retries=5
+          --health-retries=10
 
     steps:
       - name: Checkout Repository
@@ -36,8 +35,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          pip install --upgrade pip
-          pip install requests psycopg2
+          python -m pip install --upgrade pip
+          pip install requests psycopg2-binary
 
       - name: Prepare artifacts folder
         run: mkdir -p artifacts
@@ -45,11 +44,11 @@ jobs:
       - name: Wait for Postgres
         run: |
           echo "Waiting for Postgres to be ready..."
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
+          until pg_isready -h localhost -p 5432 -U postgres -d postgres; do
             echo "Postgres not ready yet... waiting 2s"
             sleep 2
           done
+          echo "Postgres is ready!"
 
       - name: Run Crawler
         env:
@@ -59,7 +58,19 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: postgres
           PGPORT: 5432
-        run: python main.py
+          TARGET_COUNT: 100000
+          DAYS_PER_SLICE: 3
+          BATCH_SIZE: 200
+          OUT_CSV: artifacts/repos_stars.csv
+        run: |
+          mkdir -p artifacts
+          python main.py
+
+      - name: Ensure CSV exists
+        run: |
+          if [ ! -f artifacts/repos_stars.csv ]; then
+            echo "repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at" > artifacts/repos_stars.csv
+          fi
 
       - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
