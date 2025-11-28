@@ -39,6 +39,9 @@ jobs:
           pip install --upgrade pip
           pip install requests psycopg2
 
+      - name: Prepare artifacts folder
+        run: mkdir -p artifacts
+
       - name: Run Crawler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
