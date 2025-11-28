@@ -42,22 +42,27 @@ jobs:
       - name: Prepare artifacts folder
         run: mkdir -p artifacts
 
+      - name: Wait for Postgres
+        run: |
+          echo "Waiting for Postgres to be ready..."
+          for i in {1..30}; do
+            pg_isready -h localhost -p 5432 -U postgres && break
+            echo "Postgres not ready yet... waiting 2s"
+            sleep 2
+          done
+
       - name: Run Crawler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGHOST: postgres
+          PGHOST: localhost
           PGUSER: postgres
           PGPASSWORD: postgres
           PGDATABASE: postgres
           PGPORT: 5432
-        run: |
-          mkdir -p artifacts
-          python main.py
-
+        run: python main.py
 
       - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
         with:
           name: repos_stars
           path: artifacts/repos_stars.csv
-
