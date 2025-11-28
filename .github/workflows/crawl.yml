@@ -59,14 +59,7 @@ jobs:
           PGPASSWORD: postgres
           PGDATABASE: postgres
           PGPORT: 5432
-          TARGET_COUNT: 100000
-          DAYS_PER_SLICE: 3
-          BATCH_SIZE: 200
-          OUT_CSV: artifacts/repos_stars.csv
-        run: |
-          mkdir -p artifacts
-          python main.py
-
+        run: python main.py
 
       - name: Upload CSV Artifact
         uses: actions/upload-artifact@v4
