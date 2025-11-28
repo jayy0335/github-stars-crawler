@@ -1,96 +1,55 @@
-name: Crawl GitHub Stars
+name: GitHub Stars Crawler
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '0 2 * * *'   # daily run at 02:00 UTC (optional)
+    - cron: "0 0 * * *"  
+  workflow_dispatch:    
 
 jobs:
   crawl:
-    runs-on: ubuntu-latest
+    runs-on: :contentReference[oaicite:0]{index=0}
+
     services:
       postgres:
-        image: postgres:14
+        image: :contentReference[oaicite:1]{index=1}
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: postgres
+          POSTGRES_USER: ${{ secrets.PGUSER }}
+          POSTGRES_PASSWORD: ${{ secrets.PGPASSWORD }}
+          POSTGRES_DB: ${{ secrets.PGDATABASE }}
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    env:
-      PGHOST: localhost
-      PGPORT: 5432
-      PGUSER: postgres
-      PGPASSWORD: postgres
-      PGDATABASE: postgres
-      # TARGET_COUNT - reduce for testing, increase later
-      TARGET_COUNT: 1000
+          --health-cmd="pg_isready -U ${{ secrets.PGUSER }}"
+          --health-interval=5s
+          --health-timeout=3s
+          --health-retries=5
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: :contentReference[oaicite:2]{index=2}@v3
 
-      - name: Wait for Postgres service
-        run: |
-          echo "Waiting for Postgres..."
-          for i in {1..30}; do
-            pg_isready -h localhost -p 5432 -U postgres && break
-            sleep 1
-          done
-          pg_isready -h localhost -p 5432 -U postgres
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: :contentReference[oaicite:3]{index=3}@v4
         with:
-          python-version: '3.10'
+          python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install psycopg2-binary requests
+          pip install --upgrade pip
+          pip install requests psycopg2
 
-      - name: Force recreate repositories table
-        run: |
-          psql postgresql://postgres:postgres@localhost:5432/postgres -c "DROP TABLE IF EXISTS repositories;"
-          psql postgresql://postgres:postgres@localhost:5432/postgres -c "
-            CREATE TABLE repositories (
-              repo_id TEXT PRIMARY KEY,
-              name_with_owner TEXT NOT NULL,
-              repo_name TEXT,
-              owner_login TEXT,
-              url TEXT,
-              stars INT NOT NULL,
-              last_seen TIMESTAMP WITH TIME ZONE DEFAULT now(),
-              fetched_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-            );"
-
-      - name: Check schema
-        run: |
-          echo "Verifying repositories table structure:"
-          psql postgresql://postgres:postgres@localhost:5432/postgres -c "\d+ repositories"
-
-      - name: Run crawler
+      - name: Run Crawler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGHOST: localhost
+          PGHOST: ${{ secrets.PGHOST }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
           PGPORT: 5432
-          PGUSER: postgres
-          PGPASSWORD: postgres
-          PGDATABASE: postgres
-          TARGET_COUNT: ${{ env.TARGET_COUNT }}
-          OUT_CSV: /tmp/repos_stars.csv
-        run: |
-          python crawl_stars.py
-          ls -lh /tmp/repos_stars.csv
+        run: python main.py
 
-      - name: Upload CSV artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload CSV Artifact
+        uses: :contentReference[oaicite:4]{index=4}@v3
         with:
-          name: repos-stars
-          path: /tmp/repos_stars.csv
+          name: repos_stars
+          path: artifacts/repos_stars.csv

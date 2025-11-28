@@ -1,3 +1,17 @@
+import os
+import time
+import json
+import math
+import logging
+from datetime import datetime, timedelta
+import requests
+import psycopg2
+from psycopg2.extras import execute_values
+import csv
+import tempfile
+import shutil
+    
+
 #!/usr/bin/env python3
 """
 crawl_stars.py
@@ -11,15 +25,6 @@ Environment variables expected:
 - TARGET_COUNT    : integer, default 100000
 """
 
-import os
-import time
-import json
-import math
-import logging
-from datetime import datetime, timedelta
-import requests
-import psycopg2
-from psycopg2.extras import execute_values
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -33,7 +38,7 @@ PGUSER = os.getenv("PGUSER", "postgres")
 PGPASSWORD = os.getenv("PGPASSWORD", "")
 PGDATABASE = os.getenv("PGDATABASE", "postgres")
 
-TARGET_COUNT = int(os.getenv("TARGET_COUNT", "100000"))
+TARGET_COUNT = int(os.getenv("TARGET_COUNT", "1000000"))
 
 GRAPHQL_URL = "https://api.github.com/graphql"
 HEADERS = {"Authorization": f"bearer {GITHUB_TOKEN}"}
@@ -210,9 +215,6 @@ def fetch_repos_target(target_count=TARGET_COUNT):
         logging.info("Final upsert done. Total collected ~ %s", collected)
 
     # export to CSV (fixed version inside the function)
-    import csv
-    import tempfile
-    import shutil
     
     out_file = os.getenv("OUT_CSV", "/tmp/repos_stars.csv")
     try:
