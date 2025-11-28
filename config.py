@@ -6,7 +6,7 @@ class Config:
     if not GITHUB_TOKEN:
         raise SystemExit("GITHUB_TOKEN env var required")
 
-    PGHOST = os.getenv("PGHOST", "localhost")
+    PGHOST = os.getenv("PGHOST", "postgres")
     PGPORT = int(os.getenv("PGPORT", "5432"))
     PGUSER = os.getenv("PGUSER", "postgres")
     PGPASSWORD = os.getenv("PGPASSWORD", "postgres") 
