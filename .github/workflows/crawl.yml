@@ -52,7 +52,8 @@ jobs:
           python main.py
 
       - name: Upload CSV Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: github-stars-csv
+          name: repos_stars
           path: artifacts/repos_stars.csv
+
