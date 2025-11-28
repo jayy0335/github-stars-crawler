@@ -1,9 +1,12 @@
 name: GitHub Stars Crawler
 
 on:
+  push:
+    branches:
+      - github-stars-crawler   # only this branch
+  workflow_dispatch:
   schedule:
-    - cron: "0 0 * * *" # daily at midnight UTC
-  workflow_dispatch:    # allows manual trigger
+    - cron: "0 0 * * *"
 
 jobs:
   crawl:
