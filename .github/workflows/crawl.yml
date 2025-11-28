@@ -3,23 +3,24 @@ name: GitHub Stars Crawler
 on:
   schedule:
     - cron: "0 0 * * *" # daily at midnight UTC
-  workflow_dispatch:    # manual trigger
+  workflow_dispatch:    # allows manual trigger
 
 jobs:
   crawl:
     runs-on: ubuntu-latest
 
+    # PostgreSQL service with static credentials
     services:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_USER: ${{ secrets.PGUSER }}
-          POSTGRES_PASSWORD: ${{ secrets.PGPASSWORD }}
-          POSTGRES_DB: ${{ secrets.PGDATABASE }}
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: postgres
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U ${{ secrets.PGUSER }}"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=5s
           --health-timeout=3s
           --health-retries=5
@@ -41,7 +42,7 @@ jobs:
       - name: Run Crawler
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGHOST: ${{ secrets.PGHOST }}
+          PGHOST: localhost
           PGUSER: ${{ secrets.PGUSER }}
           PGPASSWORD: ${{ secrets.PGPASSWORD }}
           PGDATABASE: ${{ secrets.PGDATABASE }}
