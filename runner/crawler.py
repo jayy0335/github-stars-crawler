@@ -1,12 +1,15 @@
 from __future__ import annotations
 import time
 from datetime import datetime, timedelta
-
 from github.client import graphql_request
 from github.queries import SEARCH_REPOS
 from db.repository import upsert_repositories
 from config import Config
 from core.logger import get_logger
+from db.connection import get_db_connection
+import os
+from csv import writer
+
 
 logger = get_logger()
 
@@ -25,7 +28,6 @@ def crawl_and_store(target_count: int, batch_size: int, days_per_slice: int) -> 
     end = datetime.utcnow()
 
     try:
-        from db.connection import get_db_connection
         conn = get_db_connection()
 
         logger.info("Applying schema if not exists")
@@ -99,6 +101,18 @@ def crawl_and_store(target_count: int, batch_size: int, days_per_slice: int) -> 
             upsert_repositories(conn, batch)
 
         logger.info(f"Crawling complete total {collected}")
+        
+        os.makedirs(os.path.dirname(Config_res.OUT_CSV), exist_ok=True)
+        with conn.cursor() as cur:
+            cur.execute("SELECT repo_id, name_with_owner, repo_name, owner_login, url, stars, fetched_at FROM repositories")
+            rows = cur.fetchall()
+
+        with open(Config_res.OUT_CSV, "w", encoding="utf-8", newline="") as f:
+            w = writer(f)
+            w.writerow(['repo_id','name_with_owner','repo_name','owner_login','url','stars','fetched_at'])
+            w.writerows(rows)
+        
+        
         return Config_res.OUT_CSV
 
     except Exception as e:
