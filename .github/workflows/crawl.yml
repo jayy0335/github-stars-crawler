@@ -55,16 +55,11 @@ jobs:
 
       - name: Run Crawler
         env:
-          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # PGHOST: localhost
-          # PGUSER: postgres
-          # PGPASSWORD: postgres
-          # PGDATABASE: postgres
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGHOST: ${{ secrets.PGHOST }}
-          PGUSER: ${{ secrets.PGUSER }}
-          PGPASSWORD: ${{ secrets.PGPASSWORD }}
-          PGDATABASE: ${{ secrets.PGDATABASE }}
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: postgres
+          PGDATABASE: postgres
           PGPORT: 5432
           TARGET_COUNT: 100000
           DAYS_PER_SLICE: 3
