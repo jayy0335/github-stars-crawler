@@ -3,7 +3,7 @@ name: GitHub Stars Crawler
 on:
   push:
     branches:
-      - github-stars-crawler   # only this branch
+      - github-stars-crawler 
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
@@ -55,15 +55,20 @@ jobs:
 
       - name: Run Crawler
         env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # PGHOST: localhost
+          # PGUSER: postgres
+          # PGPASSWORD: postgres
+          # PGDATABASE: postgres
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGHOST: localhost
-          PGUSER: postgres
-          PGPASSWORD: postgres
-          PGDATABASE: postgres
+          PGHOST: ${{ secrets.PGHOST }}
+          PGUSER: ${{ secrets.PGUSER }}
+          PGPASSWORD: ${{ secrets.PGPASSWORD }}
+          PGDATABASE: ${{ secrets.PGDATABASE }}
           PGPORT: 5432
           TARGET_COUNT: 100000
           DAYS_PER_SLICE: 3
-          BATCH_SIZE: 200
+          BATCH_SIZE: 2000
           OUT_CSV: artifacts/repos_stars.csv
         run: |
           mkdir -p artifacts
