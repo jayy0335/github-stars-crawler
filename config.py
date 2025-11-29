@@ -6,16 +6,16 @@ class Config:
     if not GITHUB_TOKEN:
         raise SystemExit("GITHUB_TOKEN env var required")
 
-    PGHOST = os.getenv("PGHOST", "postgres")
-    PGPORT = int(os.getenv("PGPORT", "5432"))
-    PGUSER = os.getenv("PGUSER", "postgres")
-    PGPASSWORD = os.getenv("PGPASSWORD", "postgres") 
-    PGDATABASE = os.getenv("PGDATABASE", "postgres")
+    PGHOST = os.getenv("PGHOST")
+    PGPORT = int(os.getenv("PGPORT"))
+    PGUSER = os.getenv("PGUSER")
+    PGPASSWORD = os.getenv("PGPASSWORD") 
+    PGDATABASE = os.getenv("PGDATABASE")
 
-    TARGET_COUNT = int(os.getenv("TARGET_COUNT", "100000"))
-    DAYS_PER_SLICE = int(os.getenv("DAYS_PER_SLICE", "3"))
-    PAGE_BATCH = int(os.getenv("BATCH_SIZE", "1000"))
+    TARGET_COUNT = int(os.getenv("TARGET_COUNT"))
+    DAYS_PER_SLICE = int(os.getenv("DAYS_PER_SLICE"))
+    PAGE_BATCH = int(os.getenv("BATCH_SIZE"))
 
-    OUT_CSV = os.getenv("OUT_CSV", "artifacts/repos_stars.csv")
+    OUT_CSV = os.getenv("OUT_CSV")
 
     GRAPHQL_URL = "https://api.github.com/graphql"
