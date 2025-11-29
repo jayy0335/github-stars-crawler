@@ -1,7 +1,0 @@
-requests
-psycopg2-binary
-python-dateutil
-loguru
-pytest
-pandas
-python-dotenv
