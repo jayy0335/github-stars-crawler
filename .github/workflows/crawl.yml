@@ -31,6 +31,14 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
+      - name: Cache Python Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
@@ -38,8 +46,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests psycopg2-binary
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Prepare artifacts folder
         run: mkdir -p artifacts
@@ -75,8 +83,12 @@ jobs:
             echo "repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at" > artifacts/repos_stars.csv
           fi
 
-      - name: Upload CSV Artifact
+      - name: Zip CSV Artifact
+        run: |
+          zip -j artifacts/repos_stars.zip artifacts/repos_stars.csv
+
+      - name: Upload Zipped Artifact
         uses: actions/upload-artifact@v4
         with:
           name: repos_stars
-          path: artifacts/repos_stars.csv
+          path: artifacts/repos_stars.zip
