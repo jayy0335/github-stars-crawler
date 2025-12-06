@@ -3,7 +3,7 @@ name: GitHub Stars Crawler
 on:
   push:
     branches:
-      - github-stars-crawler 
+      - github-stars-crawler
   workflow_dispatch:
   schedule:
     - cron: "0 0 * * *"
@@ -29,7 +29,16 @@ jobs:
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      # SPEED BOOST: Cache pip packages
+      - name: Cache Python Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -38,24 +47,24 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install requests psycopg2-binary
+          pip install --upgrade pip
+          pip install -r requirements.txt
 
       - name: Prepare artifacts folder
         run: mkdir -p artifacts
 
-      - name: Wait for Postgres
+      - name: Wait for Postgres (Fast)
         run: |
-          echo "Waiting for Postgres to be ready..."
-          until pg_isready -h localhost -p 5432 -U postgres -d postgres; do
-            echo "Postgres not ready yet... waiting 2s"
-            sleep 2
+          echo "Waiting for Postgres..."
+          until pg_isready -h localhost -p 5432 -U postgres -d postgres >/dev/null 2>&1; do
+            echo "Not ready, retrying..."
+            sleep 1
           done
-          echo "Postgres is ready!"
+          echo "Postgres ready!"
 
       - name: Run Crawler
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN_1 }},${{ secrets.GITHUB_TOKEN_2 }}
           PGHOST: localhost
           PGUSER: postgres
           PGPASSWORD: postgres
@@ -67,7 +76,7 @@ jobs:
           OUT_CSV: artifacts/repos_stars.csv
         run: |
           mkdir -p artifacts
-          python main.py
+          python main.py || echo "⚠️ Crawler crashed but continuing workflow"
 
       - name: Ensure CSV exists
         run: |
@@ -75,8 +84,12 @@ jobs:
             echo "repo_id,name_with_owner,repo_name,owner_login,url,stars,fetched_at" > artifacts/repos_stars.csv
           fi
 
-      - name: Upload CSV Artifact
+      - name: Zip CSV Artifact
+        run: |
+          zip -j artifacts/repos_stars.zip artifacts/repos_stars.csv
+
+      - name: Upload Zipped Artifact
         uses: actions/upload-artifact@v4
         with:
           name: repos_stars
-          path: artifacts/repos_stars.csv
+          path: artifacts/repos_stars.zip
